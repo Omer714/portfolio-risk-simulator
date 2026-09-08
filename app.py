@@ -194,12 +194,17 @@ col6.metric(
 
 st.header("What This Means")
 
-top_risk_asset = risk_contribution_pct.idxmax()
-top_risk_value = risk_contribution_pct.max()
-top_weight_value = weights_pct[top_risk_asset]
+risk_vs_weight_gap = risk_contribution_pct - weights_pct
+top_amplifier = risk_vs_weight_gap.idxmax()
+top_amplifier_weight = weights_pct[top_amplifier]
+top_amplifier_risk = risk_contribution_pct[top_amplifier]
 hedges = risk_contribution_pct[risk_contribution_pct < 0]
 
-narrative = f"**{top_risk_asset}** makes up {top_weight_value:.0f}% of your portfolio's capital, but contributes {top_risk_value:.0f}% of its total risk.\n\n"
+narrative = (
+    f"**{top_amplifier}** makes up {top_amplifier_weight:.0f}% of your portfolio's capital, but "
+    f"contributes a disproportionate {top_amplifier_risk:.0f}% of its total risk — "
+    f"the largest gap between capital allocated and risk taken on across your holdings.\n\n"
+)
 
 if len(hedges) > 0:
     hedge_names = ", ".join(hedges.index)
@@ -216,6 +221,39 @@ narrative += (
 )
 
 st.markdown(narrative)
+
+st.subheader("Why do certain assets act as hedges?")
+
+correlation_matrix = returns[asset_names].corr().round(2)
+st.write("**Correlation matrix** — how each asset moves relative to the others (1 = always moves together, -1 = always moves oppositely, 0 = unrelated):")
+st.dataframe(correlation_matrix)
+
+if len(hedges) > 0:
+    for hedge_asset in hedges.index:
+        hedge_weight = weights_pct[hedge_asset]
+        hedge_risk = risk_contribution_pct[hedge_asset]
+        corr_with_spy = correlation_matrix.loc[hedge_asset, "SPY"]
+
+        st.write(
+            f"**{hedge_asset}** makes up {hedge_weight:.0f}% of your capital but contributes "
+            f"**{hedge_risk:.2f}%** to total risk — it's actively reducing volatility rather than adding to it. "
+            f"Its correlation with SPY is **{corr_with_spy:.2f}**, meaning it tends to move somewhat "
+            f"independently of (or opposite to) your largest equity holding."
+        )
+else:
+    st.write("At your current weights, no single asset is acting as a net hedge — every asset is contributing positively to overall portfolio risk. This can happen even when an asset has low or negative correlation with the rest of the portfolio, if its weight is too small to meaningfully offset the risk from your larger holdings.")
+
+st.subheader("Capital Weight vs. Risk Contribution")
+fig3, ax3 = plt.subplots(figsize=(10, 5))
+x = np.arange(len(asset_names))
+width = 0.35
+ax3.bar(x - width/2, weights_pct, width, label="Weight (%)", color="steelblue")
+ax3.bar(x + width/2, risk_contribution_pct, width, label="Risk Contribution (%)", color="indianred")
+ax3.axhline(y=0, color="black", linewidth=0.8)
+ax3.set_xticks(x)
+ax3.set_xticklabels(asset_names)
+ax3.legend()
+st.pyplot(fig3)
 
 # --- Charts ---
 st.header("Charts")
@@ -259,17 +297,6 @@ st.write(
     f"**\${p5_value:,.0f}** and **\${p95_value:,.0f}**, with a typical outcome around **\${p50_value:,.0f}**."
 )
 
-st.subheader("Capital Weight vs. Risk Contribution")
-fig3, ax3 = plt.subplots(figsize=(10, 5))
-x = np.arange(len(asset_names))
-width = 0.35
-ax3.bar(x - width/2, weights_pct, width, label="Weight (%)", color="steelblue")
-ax3.bar(x + width/2, risk_contribution_pct, width, label="Risk Contribution (%)", color="indianred")
-ax3.axhline(y=0, color="black", linewidth=0.8)
-ax3.set_xticks(x)
-ax3.set_xticklabels(asset_names)
-ax3.legend()
-st.pyplot(fig3)
 
 st.subheader("Efficient Frontier")
 fig4, ax4 = plt.subplots(figsize=(10, 6))
@@ -332,5 +359,5 @@ if st.button("Show Optimized Portfolios"):
     st.caption(
     "Note: these optimized portfolios are based on this specific historical period. "
     "Past performance and correlations don't guarantee future results — treat this as a "
-    "starting point for thinking about risk/return tradeoffs, not a guarantee."
+    "starting point for thinking about risk/return tradeoffs."
 )
