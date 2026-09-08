@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 st.title("Portfolio Risk Simulator")
 st.write("Adjust the weights in the side bar — they should add up to 100%.")
 
+st.info(
+    "📊 **Data Coverage:** This simulator is built on historical daily price data "
+    "from **January 1, 2016** to **September 5, 2026** for SPY, QQQ, TLT, GLD, and VNQ. "
+    "All metrics, correlations, and simulations are derived from this historical window."
+)
+
 st.sidebar.header("Portfolio Weights")
 
 if st.sidebar.button("Reset to Default Weights"):
@@ -125,6 +131,7 @@ VaR_pct = 1 - np.percentile(final_values, percentile_cutoff)
 worst_pct_values = final_values[final_values <= np.percentile(final_values, percentile_cutoff)]
 CVaR_pct = 1 - worst_pct_values.mean()
 
+
 # Risk contribution per asset
 cov_matrix = returns[asset_names].cov() * 252
 portfolio_variance = np.dot(weights_array.T, np.dot(cov_matrix, weights_array))
@@ -241,6 +248,16 @@ ax2.set_xlabel("Trading Days")
 ax2.set_ylabel(f"Portfolio Value (starting at ${investment_amount:,.0f})")
 ax2.legend()
 st.pyplot(fig2)
+
+p5_value = np.percentile(final_values, 5) * investment_amount
+p50_value = np.percentile(final_values, 50) * investment_amount
+p95_value = np.percentile(final_values, 95) * investment_amount
+
+st.write(
+    f"**Looking forward {horizon_label.lower()}:** based on this portfolio's historical behavior, "
+    f"there's a 90% chance your \${investment_amount:,.0f} investment ends up somewhere between "
+    f"**\${p5_value:,.0f}** and **\${p95_value:,.0f}**, with a typical outcome around **\${p50_value:,.0f}**."
+)
 
 st.subheader("Capital Weight vs. Risk Contribution")
 fig3, ax3 = plt.subplots(figsize=(10, 5))
