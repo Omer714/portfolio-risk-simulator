@@ -22,6 +22,10 @@ This tool lets you build a 5-asset portfolio (SPY, QQQ, TLT, GLD, VNQ), adjust t
 
 Historical daily closing prices for SPY, QQQ, TLT, GLD, and VNQ, covering **January 1, 2016 to September 5, 2026**.
 
+## Exploratory analysis
+
+`analysis.ipynb` contains the original step-by-step Jupyter notebook used to develop and test the underlying calculations (returns, correlation, VaR/CVaR, efficient frontier simulation) before they were built into the Streamlit app.
+
 ## Tech stack
 
 Python · Streamlit · pandas · NumPy · Matplotlib · Plotly
