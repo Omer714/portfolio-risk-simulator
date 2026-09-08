@@ -8,11 +8,29 @@ st.write("Adjust the weights in the side bar — they should add up to 100%.")
 
 st.sidebar.header("Portfolio Weights")
 
-spy_weight = st.sidebar.slider("SPY", 0, 100, 60)
-qqq_weight = st.sidebar.slider("QQQ", 0, 100, 20)
-tlt_weight = st.sidebar.slider("TLT", 0, 100, 10)
-gld_weight = st.sidebar.slider("GLD", 0, 100, 5)
-vnq_weight = st.sidebar.slider("VNQ", 0, 100, 5)
+if st.sidebar.button("Reset to Default Weights"):
+    st.session_state.spy_weight = 60
+    st.session_state.qqq_weight = 20
+    st.session_state.tlt_weight = 10
+    st.session_state.gld_weight = 5
+    st.session_state.vnq_weight = 5
+
+if "spy_weight" not in st.session_state:
+    st.session_state.spy_weight = 60
+if "qqq_weight" not in st.session_state:
+    st.session_state.qqq_weight = 20
+if "tlt_weight" not in st.session_state:
+    st.session_state.tlt_weight = 10
+if "gld_weight" not in st.session_state:
+    st.session_state.gld_weight = 5
+if "vnq_weight" not in st.session_state:
+    st.session_state.vnq_weight = 5
+
+spy_weight = st.sidebar.slider("SPY", 0, 100, key="spy_weight")
+qqq_weight = st.sidebar.slider("QQQ", 0, 100, key="qqq_weight")
+tlt_weight = st.sidebar.slider("TLT", 0, 100, key="tlt_weight")
+gld_weight = st.sidebar.slider("GLD", 0, 100, key="gld_weight")
+vnq_weight = st.sidebar.slider("VNQ", 0, 100, key="vnq_weight")
 
 total_weight = spy_weight + qqq_weight + tlt_weight + gld_weight + vnq_weight
 st.sidebar.write(f"Total: {total_weight}%")
@@ -253,3 +271,49 @@ ax4.set_xlabel("Annualised Volatility (Risk)")
 ax4.set_ylabel("Annualised Return")
 ax4.legend()
 st.pyplot(fig4)
+
+if st.button("Show Optimized Portfolios"):
+    min_vol_weights = ef_weights_record[min_vol_idx] * 100
+    max_sharpe_weights = ef_weights_record[max_sharpe_idx] * 100
+
+    optimized_df = pd.DataFrame({
+        "Your Portfolio (%)": [weights_pct[a] for a in asset_names],
+        "Min Volatility (%)": min_vol_weights,
+        "Max Sharpe (%)": max_sharpe_weights
+    }, index=asset_names).round(2)
+
+    st.write("**Asset allocation comparison:**")
+    st.dataframe(optimized_df)
+
+    st.write("**Performance comparison:**")
+    comparison_metrics = pd.DataFrame({
+        "Return (%)": [
+            portfolio_annual_return * 100,
+            ef_results[0, min_vol_idx] * 100,
+            ef_results[0, max_sharpe_idx] * 100
+        ],
+        "Volatility (%)": [
+            portfolio_annual_volatility * 100,
+            ef_results[1, min_vol_idx] * 100,
+            ef_results[1, max_sharpe_idx] * 100
+        ],
+        "Sharpe Ratio": [
+            sharpe_ratio,
+            ef_results[2, min_vol_idx],
+            ef_results[2, max_sharpe_idx]
+        ]
+    }, index=["Your Portfolio", "Min Volatility", "Max Sharpe"]).round(2)
+
+    st.dataframe(comparison_metrics)
+
+    st.write(
+        f"Your current portfolio has a Sharpe ratio of **{sharpe_ratio:.2f}**. "
+        f"The best possible Sharpe ratio found in this simulation was **{ef_results[2, max_sharpe_idx]:.2f}** "
+        f"— achieved with a very different asset mix than yours."
+    )
+
+    st.caption(
+    "Note: these optimized portfolios are based on this specific historical period. "
+    "Past performance and correlations don't guarantee future results — treat this as a "
+    "starting point for thinking about risk/return tradeoffs, not a guarantee."
+)
