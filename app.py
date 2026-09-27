@@ -244,15 +244,47 @@ else:
     st.write("At your current weights, no single asset is acting as a net hedge — every asset is contributing positively to overall portfolio risk. This can happen even when an asset has low or negative correlation with the rest of the portfolio, if its weight is too small to meaningfully offset the risk from your larger holdings.")
 
 st.subheader("Capital Weight vs. Risk Contribution")
+# fig3, ax3 = plt.subplots(figsize=(10, 5))
+# x = np.arange(len(asset_names))
+# width = 0.35
+# ax3.bar(x - width/2, weights_pct, width, label="Weight (%)", color="steelblue")
+# ax3.bar(x + width/2, risk_contribution_pct, width, label="Risk Contribution (%)", color="indianred")
+# ax3.axhline(y=0, color="black", linewidth=0.8)
+# ax3.set_xticks(x)
+# ax3.set_xticklabels(asset_names)
+# ax3.legend()
+# st.pyplot(fig3)
+
 fig3, ax3 = plt.subplots(figsize=(10, 5))
 x = np.arange(len(asset_names))
 width = 0.35
-ax3.bar(x - width/2, weights_pct, width, label="Weight (%)", color="steelblue")
-ax3.bar(x + width/2, risk_contribution_pct, width, label="Risk Contribution (%)", color="indianred")
+
+bars1 = ax3.bar(x - width/2, weights_pct, width, label="Weight (%)", color="steelblue")
+bars2 = ax3.bar(x + width/2, risk_contribution_pct, width, label="Risk Contribution (%)", color="indianred")
+
+# Give the y-axis explicit room below zero so small negative bars are visible
+y_min = min(risk_contribution_pct.min(), 0) - 5
+y_max = max(weights_pct.max(), risk_contribution_pct.max()) + 5
+ax3.set_ylim(y_min, y_max)
+
 ax3.axhline(y=0, color="black", linewidth=0.8)
 ax3.set_xticks(x)
 ax3.set_xticklabels(asset_names)
 ax3.legend()
+
+# Add value labels on top of each bar, so exact numbers are readable even when bars are tiny
+for bars in [bars1, bars2]:
+    for bar in bars:
+        height = bar.get_height()
+        ax3.annotate(
+            f"{height:.2f}",
+            xy=(bar.get_x() + bar.get_width() / 2, height),
+            xytext=(0, 3 if height >= 0 else -12),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8
+        )
+
 st.pyplot(fig3)
 
 # --- Charts ---
